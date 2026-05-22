@@ -1,0 +1,5 @@
+Placeholder for docs/screenshots/01-chat.png.
+
+Capture the chat view after asking:
+    "What is reciprocal rank fusion?"
+with the citations panel expanded.

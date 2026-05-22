@@ -1,0 +1,3 @@
+Placeholder for docs/screenshots/03-upload.png.
+
+Capture the sidebar with a freshly uploaded PDF visible in the corpus list.

@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ir-agent-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=production
+      - VECTOR_STORE_PATH=/app/data/chroma
+      - DOCUMENT_STORE_PATH=/app/data/documents.db
+      - SEED_CORPUS_PATH=/app/data/seed
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend-data:/app/data
+      - ./backend/data/seed:/app/data/seed:ro
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - ir-agent-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ir-agent-frontend
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - ir-agent-net
+
+volumes:
+  backend-data:
+    driver: local
+
+networks:
+  ir-agent-net:
+    driver: bridge

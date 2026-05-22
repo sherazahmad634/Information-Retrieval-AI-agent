@@ -1,0 +1,4 @@
+Placeholder for docs/screenshots/04-search.png.
+
+Capture the /api/v1/search Swagger UI try-it-out with a sample query and
+response body visible.

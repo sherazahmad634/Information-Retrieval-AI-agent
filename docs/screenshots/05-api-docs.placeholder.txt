@@ -1,0 +1,4 @@
+Placeholder for docs/screenshots/05-api-docs.png.
+
+Capture the full Swagger UI overview at /docs showing every router (health,
+documents, search, chat, tools).

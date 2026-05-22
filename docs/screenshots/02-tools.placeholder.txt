@@ -1,0 +1,4 @@
+Placeholder for docs/screenshots/02-tools.png.
+
+Capture the tool badges above an assistant message showing the agent calling
+multiple tools in one turn (e.g. document_search + calculator + remember).
