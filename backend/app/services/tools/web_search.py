@@ -1,7 +1,11 @@
-"""Web search tool backed by DuckDuckGo's public HTML endpoint.
+"""Web search tools.
 
-No API key is required. Results are parsed from the lightweight ``html.duckduckgo.com``
-endpoint to keep the dependency surface small.
+Two implementations are provided:
+
+* :class:`WebSearchTool` — DuckDuckGo HTML scraper (no API key required).
+* :class:`TavilyWebSearchTool` — Tavily Search API (requires ``TAVILY_API_KEY``).
+
+The active implementation is selected at startup via ``WEB_SEARCH_PROVIDER``.
 """
 
 from __future__ import annotations
@@ -109,3 +113,73 @@ class WebSearchTool(Tool):
             if len(items) >= max_results:
                 break
         return items
+
+
+class TavilyWebSearchTool(Tool):
+    """Search the open web via the Tavily Search API."""
+
+    name = "web_search"
+    description = (
+        "Search the public web for fresh information not available in the indexed "
+        "corpus. Use this when the user explicitly asks for current events, recent "
+        "facts, or topics that document_search returned no results for. Returns the "
+        "top result titles, snippets, and URLs."
+    )
+    parameters_schema = {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "Web search query.",
+            },
+            "max_results": {
+                "type": "integer",
+                "description": "Number of results to return (1-10). Defaults to 5.",
+                "minimum": 1,
+                "maximum": 10,
+            },
+        },
+        "required": ["query"],
+        "additionalProperties": False,
+    }
+
+    def __init__(self, *, api_key: str) -> None:
+        from tavily import AsyncTavilyClient
+
+        self._client = AsyncTavilyClient(api_key=api_key)
+
+    async def run(self, **kwargs: Any) -> ToolResult:
+        query = kwargs.get("query")
+        max_results = int(kwargs.get("max_results") or 5)
+        if not isinstance(query, str) or not query.strip():
+            raise ToolError("`query` is required.")
+
+        try:
+            response = await self._client.search(
+                query=query,
+                max_results=max_results,
+                search_depth="basic",
+            )
+        except Exception as exc:
+            raise ToolError(f"Tavily search request failed: {exc}") from exc
+
+        results = [
+            {
+                "title": r.get("title", ""),
+                "url": r.get("url", ""),
+                "snippet": r.get("content", ""),
+            }
+            for r in response.get("results", [])
+            if r.get("title") and r.get("url")
+        ]
+
+        if not results:
+            return ToolResult(
+                content=f"Web search for '{query}' returned no results.",
+                data={"results": []},
+            )
+
+        lines = [f"Top {len(results)} web results for '{query}':"]
+        for idx, r in enumerate(results, start=1):
+            lines.append(f"[{idx}] {r['title']}\n{r['url']}\n{r['snippet']}")
+        return ToolResult(content="\n\n".join(lines), data={"results": results})

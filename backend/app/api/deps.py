@@ -39,7 +39,7 @@ from app.services.tools.document_ingest import DocumentIngestTool
 from app.services.tools.document_search import DocumentSearchTool
 from app.services.tools.memory_tool import RecallTool, RememberTool
 from app.services.tools.registry import ToolRegistry
-from app.services.tools.web_search import WebSearchTool
+from app.services.tools.web_search import TavilyWebSearchTool, WebSearchTool
 from app.utils.chunker import ChunkerConfig, TextChunker
 
 
@@ -122,11 +122,19 @@ class AppContainer:
         )
 
     def _build_tools(self) -> ToolRegistry:
+        if (
+            self.settings.web_search_provider == "tavily"
+            and self.settings.tavily_api_key
+        ):
+            web_search_tool = TavilyWebSearchTool(api_key=self.settings.tavily_api_key)
+        else:
+            web_search_tool = WebSearchTool()
+
         return ToolRegistry(
             tools=[
                 DocumentSearchTool(self.retriever),
                 DocumentIngestTool(self.ingestion),
-                WebSearchTool(),
+                web_search_tool,
                 CalculatorTool(),
                 RememberTool(self.long_term_memory),
                 RecallTool(self.long_term_memory),
