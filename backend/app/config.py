@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = None
     mock_llm: bool = False
 
+    # ---- Web Search --------------------------------------------------------
+    web_search_provider: Literal["duckduckgo", "tavily"] = "duckduckgo"
+    tavily_api_key: str | None = None
+
     # ---- Embeddings --------------------------------------------------------
     embedding_provider: Literal["sentence-transformers", "openai", "mock"] = "sentence-transformers"
     embedding_model: str = "all-MiniLM-L6-v2"
